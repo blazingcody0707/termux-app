@@ -6,3 +6,7 @@ lorie xserver实现的主要思路
 屏幕是否有刷新数据，一旦发现文件描述符可读，立即回调画面刷新函数，具体调用链为
 xserver/dix/main.c/dix_main->InitOutput->renderer_init->->eglMakeCurrent->bind screen to GL Surface
                                        ->AddScreen->lorieScreenInit->timerfd_create->lorieTimerCallback->renderer_redraw
+
+3，实现surfaceView和openGl环境绑定的过程
+MainActivity->lorieView->setCallback(view.surfaceView)->(CmdEntry aidl)service->windowChanged(surface)->render_init_window
+surfaceView是可以跨越进程传递的
