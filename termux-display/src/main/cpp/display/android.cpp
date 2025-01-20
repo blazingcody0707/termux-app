@@ -5,7 +5,7 @@
 #include "LogUtil.h"
 
 void inputCallback(InputEvent ev) {
-    LOG_I("%d", ev.type);
+//    LOG_I("%d", ev.type);
 }
 void initClient() {
     DisplayClientInit(800, 600, 4);

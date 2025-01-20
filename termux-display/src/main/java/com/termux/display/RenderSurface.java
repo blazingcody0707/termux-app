@@ -8,20 +8,6 @@ import android.view.Surface;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
-/**
- * sv=findViewById(R.id.render_surface);
- *         sh = sv.getHolder();
- *         Render render = new Render(sv,sh);
- *         render.setCallback(new Render.Callback() {
- *             @Override
- *             public void onChanged(SurfaceHolder holder, int format, int width, int height) {
- *                 sv.windowChanged(holder.getSurface(), "screen");
- *                 sv.startClient();
- *             }
- *         });
- *         sh.addCallback(render);
- *         sv.setServerNativeAssetManager(getAssets());
- */
 public class RenderSurface extends SurfaceView {
     public RenderSurface(Context context) {
         super(context);
