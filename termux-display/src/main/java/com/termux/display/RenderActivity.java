@@ -19,11 +19,11 @@ public class RenderActivity extends AppCompatActivity {
         render.setCallback(new Render.Callback() {
             @Override
             public void onChanged(SurfaceHolder holder, int format, int width, int height) {
-                sv.windowChanged(holder.getSurface(), "screen");
-                sv.startClient();
+                Display.windowChanged(holder.getSurface(), "screen");
+                Display.startClient();
             }
         });
         sh.addCallback(render);
-        sv.setServerNativeAssetManager(getAssets());
+        Display.setServerNativeAssetManager(getAssets());
     }
 }

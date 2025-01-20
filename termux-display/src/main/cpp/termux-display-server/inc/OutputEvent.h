@@ -1,6 +1,8 @@
-#pragma once
+#ifndef OUTPUT_EVENT_H
+#define OUTPUT_EVENT_H
 #include <stdint.h>
-
+#ifndef EVENT_TYPE_ENUM
+#define EVENT_TYPE_ENUM
 typedef enum {
     EVENT_SCREEN_SIZE,
     EVENT_TOUCH,
@@ -14,6 +16,7 @@ typedef enum {
     EVENT_CLIPBOARD_REQUEST,
     EVENT_CLIPBOARD_SEND,
 } eventType;
+#endif
 typedef union {
     uint8_t type;
     struct {
@@ -58,3 +61,4 @@ typedef union {
         uint32_t count;
     } clipboardSend;
 } OutputEvent;
+#endif

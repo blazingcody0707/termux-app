@@ -14,14 +14,16 @@ void initClient() {
     pthread_create(&t, NULL, reinterpret_cast<void *(*)(void *)>(DisplayClientStart), nullptr);
 }
 
-extern "C" JNIEXPORT void JNICALL
-Java_com_termux_display_RenderSurface_windowChanged(JNIEnv *env, jobject thiz, jobject surface,
-                                                    jstring jname) {
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_termux_display_Display_windowChanged(JNIEnv *env, jclass clazz, jobject surface,
+                                              jstring name) {
     jobject sf = surface ? env->NewGlobalRef(surface) : NULL;
     setWindow(env, sf);
     DisplayServerInit();
 }
-extern "C" JNIEXPORT void JNICALL
-Java_com_termux_display_RenderSurface_startClient(JNIEnv *env, jobject thiz) {
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_termux_display_Display_startClient(JNIEnv *env, jclass clazz) {
     initClient();
 }

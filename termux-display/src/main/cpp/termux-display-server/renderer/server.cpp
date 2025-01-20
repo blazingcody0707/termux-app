@@ -3,7 +3,7 @@
 #include "SocketIPCServer.h"
 #include "OutputClient.h"
 #include "server.h"
-#include "../../termux-display-client/inc/LogUtil.h"
+#include "LogUtil.h"
 
 #define MAX_EVENTS 10
 static bool isRunning = false;
@@ -23,8 +23,8 @@ static OutputClient *outputClient;
 #define SOCKET_NAME     "shard_texture_socket"
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_termux_display_RenderSurface_setServerNativeAssetManager(JNIEnv *env, jobject thiz,
-                                                                  jobject asset_manager) {
+Java_com_termux_display_Display_setServerNativeAssetManager(JNIEnv *env, jobject thiz,
+                                                            jobject asset_manager) {
     nativeasset = AAssetManager_fromJava(env, asset_manager);
 }
 
@@ -200,3 +200,8 @@ void ServerStart(void *object) {
     }
 }
 
+void SendOutputEvent(OutputEvent ev) {
+    if (outputClient) {
+        outputClient->SendOutputEvent(ev);
+    }
+}
