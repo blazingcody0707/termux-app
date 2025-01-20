@@ -6,8 +6,8 @@
     android:fitsSystemWindows="true"
     android:id="@+id/main_layout"
     android:orientation="horizontal"
-    tools:context=".MainActivity">
-    <com.example.render.RenderSurface
+    tools:context=".RenderActivity">
+    <com.termux.display.RenderSurface
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:id="@+id/render_surface"/>
