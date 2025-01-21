@@ -21,6 +21,33 @@ static jobject surface;
 static OutputClient *outputClient;
 
 #define SOCKET_NAME     "shard_texture_socket"
+
+static JNIEnv *displayEnv;
+static jobject displayObject;
+
+
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_termux_display_Display_initJNIEnv(JNIEnv *env, jobject thiz) {
+    // TODO: implement initJNIEnv()
+    displayEnv = env;
+    displayObject = thiz;
+}
+void notifyWindowChanged() {
+    JavaVM *vm = NULL;
+    displayEnv->GetJavaVM(&vm);
+    vm->AttachCurrentThread(&displayEnv, vm);
+
+    jclass clazz = env->FindClass("com/termux/display/Display");
+    jmethodID methodId = env->GetMethodID(clazz, "notifyWindowChanged", "()V");
+    jobject obj =displayObject;
+    env->CallVoidMethod(obj, methodId);
+
+    vm->DetachCurrentThread();
+}
+
+
+
 extern "C"
 JNIEXPORT void JNICALL
 Java_com_termux_display_Display_setServerNativeAssetManager(JNIEnv *env, jobject thiz,
@@ -135,6 +162,9 @@ void ServerStart(void *object) {
         serverRenderer->Init(hwBuffer, env, surface);
         isRunning = true;
         LOG_D("    datasocket connected");
+
+        notifyWindowChanged();
+
         int timer_fd = timerfd_create(CLOCK_MONOTONIC, TFD_NONBLOCK);
         if (timer_fd == -1) {
             LOG_E("timerfd_create failed:%s", strerror(errno));
@@ -205,3 +235,4 @@ void SendOutputEvent(OutputEvent ev) {
         outputClient->SendOutputEvent(ev);
     }
 }
+

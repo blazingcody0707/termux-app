@@ -43,6 +43,7 @@ public class LorieView extends SurfaceView implements InputStub {
         BUILTIN_X_SEVER, BUILTIN_RENDER_SEVER
     }
 
+    public Display displayAdapter;
     public RenderMode renderMode = RenderMode.BUILTIN_RENDER_SEVER;
     public final Keyboard keyboard = Keyboard.createKeyboard(this);
     public final Pointer pointer = new Pointer(this);
@@ -81,6 +82,9 @@ public class LorieView extends SurfaceView implements InputStub {
         @Override
         public void surfaceCreated(@NonNull SurfaceHolder holder) {
             holder.setFormat(PixelFormat.BGRA_8888);
+            if (renderMode == RenderMode.BUILTIN_RENDER_SEVER) {
+                LorieView.this.displayAdapter.initJNIEnv();
+            }
         }
 
         @Override
@@ -93,7 +97,7 @@ public class LorieView extends SurfaceView implements InputStub {
                 return;
 
             getDimensionsFromSettings();
-            if (renderMode==RenderMode.BUILTIN_X_SEVER){
+            if (renderMode == RenderMode.BUILTIN_X_SEVER) {
                 mCallback.changed(holder.getSurface(), width, height, p.x, p.y);
             } else if (renderMode == RenderMode.BUILTIN_RENDER_SEVER) {
                 Display.setServerNativeAssetManager(getContext().getAssets());
@@ -135,6 +139,9 @@ public class LorieView extends SurfaceView implements InputStub {
         clipboard = (ClipboardManager) getContext().getSystemService(Context.CLIPBOARD_SERVICE);
         screenInfo = new ScreenInfo(this);
         cursorLocker = new CursorLocker(this);
+        if (renderMode == RenderMode.BUILTIN_RENDER_SEVER) {
+            displayAdapter = new Display();
+        }
     }
 
     public void setCallback(Callback callback) {

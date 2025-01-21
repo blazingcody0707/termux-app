@@ -305,6 +305,9 @@ public class MainActivity extends LoriePreferences implements View.OnApplyWindow
         Executors.newSingleThreadExecutor().execute(() -> {
             winHandler.start();
         });
+        getLorieView().displayAdapter.setDisplayCallback(() -> {
+            MainActivity.this.clientConnectedStateChanged(true);
+        });
     }
 
     @Override

@@ -4,6 +4,21 @@ import android.content.res.AssetManager;
 import android.view.Surface;
 
 public class Display {
+    public interface DisplayCallback{
+        void onFinishInitialize();
+    }
+    private DisplayCallback displayCallback;
+    public void setDisplayCallback(DisplayCallback callback){
+        displayCallback=callback;
+    }
+    public void notifyWindowChanged(){
+        if (displayCallback!=null){
+            displayCallback.onFinishInitialize();
+        }
+    }
+
+    native public void initJNIEnv();
+
     static native public void windowChanged(Surface surface, String name);
 
     static native public void startClient();

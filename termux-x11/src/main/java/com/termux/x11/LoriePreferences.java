@@ -882,7 +882,7 @@ public class LoriePreferences extends AppCompatActivity {
         inputControlsView.invalidate();
         touchShow = true;
         loriePreferenceFragment.updatePreferencesLayout();
-        if (termuxActivityListener!=null){
+        if (termuxActivityListener != null) {
             termuxActivityListener.onX11PreferenceSwitchChange(false);
         }
     }
