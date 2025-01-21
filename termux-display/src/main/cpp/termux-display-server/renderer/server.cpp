@@ -25,7 +25,7 @@ extern "C"
 JNIEXPORT void JNICALL
 Java_com_termux_display_Display_setServerNativeAssetManager(JNIEnv *env, jobject thiz,
                                                             jobject asset_manager) {
-    nativeasset = AAssetManager_fromJava(env, asset_manager);
+    if (!nativeasset) { nativeasset = AAssetManager_fromJava(env, asset_manager); }
 }
 
 void setWindow(JNIEnv *e, jobject sf) {

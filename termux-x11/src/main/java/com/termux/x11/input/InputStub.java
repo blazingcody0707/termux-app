@@ -41,4 +41,7 @@ public interface InputStub {
 
     /** Sends an event, not flushing connection. */
     void sendTouchEvent(int action, int pointerId, int x, int y);
+
+    /** Sends a mouse event to Render Server. */
+    void sendMouseEventToRenderServer(float x, float y, int whichButton, boolean buttonDown, boolean relative);
 }

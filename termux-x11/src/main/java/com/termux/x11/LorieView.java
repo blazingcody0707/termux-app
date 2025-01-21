@@ -23,6 +23,7 @@ import android.view.SurfaceView;
 import androidx.annotation.Keep;
 import androidx.annotation.NonNull;
 
+import com.termux.display.Display;
 import com.termux.x11.controller.core.CursorLocker;
 import com.termux.x11.controller.winhandler.WinHandler;
 import com.termux.x11.controller.xserver.InputDeviceManager;
@@ -38,6 +39,11 @@ import java.util.regex.PatternSyntaxException;
 @SuppressLint("WrongConstant")
 @SuppressWarnings("deprecation")
 public class LorieView extends SurfaceView implements InputStub {
+    public enum RenderMode {
+        BUILTIN_X_SEVER, BUILTIN_RENDER_SEVER
+    }
+
+    public RenderMode renderMode = RenderMode.BUILTIN_RENDER_SEVER;
     public final Keyboard keyboard = Keyboard.createKeyboard(this);
     public final Pointer pointer = new Pointer(this);
     final public InputDeviceManager inputDeviceManager = new InputDeviceManager(this);
@@ -87,7 +93,13 @@ public class LorieView extends SurfaceView implements InputStub {
                 return;
 
             getDimensionsFromSettings();
-            mCallback.changed(holder.getSurface(), width, height, p.x, p.y);
+            if (renderMode==RenderMode.BUILTIN_X_SEVER){
+                mCallback.changed(holder.getSurface(), width, height, p.x, p.y);
+            } else if (renderMode == RenderMode.BUILTIN_RENDER_SEVER) {
+                Display.setServerNativeAssetManager(getContext().getAssets());
+                Display.windowChanged(holder.getSurface(), "screen");
+            }
+
         }
 
         @Override
@@ -387,6 +399,11 @@ public class LorieView extends SurfaceView implements InputStub {
     public native void sendTextEvent(byte[] text);
 
     public native void sendUnicodeEvent(int code);
+
+    @Override
+    public void sendMouseEventToRenderServer(float x, float y, int whichButton, boolean buttonDown, boolean relative) {
+        Display.sendMouseEvent(x, y, whichButton, buttonDown, relative);
+    }
 
     static {
         System.loadLibrary("Xlorie");
