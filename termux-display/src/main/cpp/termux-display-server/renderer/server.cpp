@@ -31,16 +31,16 @@ JNIEXPORT void JNICALL
 Java_com_termux_display_Display_initJNIEnv(JNIEnv *env, jobject thiz) {
     displayObject = env->NewGlobalRef(thiz);;
 }
-void notifyWindowChanged() {
+
+void notifyWindowChanged(int state) {
     vm->AttachCurrentThread(&env, vm);
 
     jclass clazz = env->GetObjectClass(displayObject);
-    jmethodID methodId = env->GetMethodID(clazz, "notifyWindowChanged", "()V");
-    env->CallVoidMethod(displayObject, methodId);
+    jmethodID methodId = env->GetMethodID(clazz, "notifyWindowChanged", "(I)V");
+    env->CallVoidMethod(displayObject, methodId, state);
 
     vm->DetachCurrentThread();
 }
-
 
 
 extern "C"
@@ -115,6 +115,13 @@ void *ServerSetup(void *object) {
             outputSocket = currentSocket;
             outputClient = new OutputClient;
             outputClient->Init(outputSocket);
+
+            struct epoll_event outputEvent;
+            outputEvent.events = EPOLLIN;
+            outputEvent.data.fd = outputSocket;
+            if (epoll_ctl(epollFd, EPOLL_CTL_ADD, dataSocket, &outputEvent) == -1) {
+                LOG_E("output epoll_ctl failed:%s", strerror(errno));
+            }
         }
     }
     LOG_D("Close dataSocket");
@@ -128,7 +135,7 @@ void DisplayServerInit() {
     LOG_D("    SERVER_APP_CMD_INIT_WINDOW");
     if (socketFd < 0) {
         pthread_t serverThread;
-        if (!vm){
+        if (!vm) {
             env->GetJavaVM(&vm);
         }
         vm->AttachCurrentThread(&env, vm);
@@ -159,7 +166,7 @@ void ServerStart(void *object) {
         isRunning = true;
         LOG_D("    datasocket connected");
 
-        notifyWindowChanged();
+        notifyWindowChanged(0);
 
         int timer_fd = timerfd_create(CLOCK_MONOTONIC, TFD_NONBLOCK);
         if (timer_fd == -1) {
@@ -179,14 +186,15 @@ void ServerStart(void *object) {
             return;
         }
 
-        struct epoll_event event;
-        event.events = EPOLLIN;
-        event.data.fd = timer_fd;
-        if (epoll_ctl(epollFd, EPOLL_CTL_ADD, timer_fd, &event) == -1) {
-            LOG_E("epoll_ctl failed:%s", strerror(errno));
+        struct epoll_event timerEvent;
+        timerEvent.events = EPOLLIN;
+        timerEvent.data.fd = timer_fd;
+        if (epoll_ctl(epollFd, EPOLL_CTL_ADD, timer_fd, &timerEvent) == -1) {
+            LOG_E("timer epoll_ctl failed:%s", strerror(errno));
             close(timer_fd);
             return;
         }
+
 
         struct epoll_event events[MAX_EVENTS];
 
@@ -194,7 +202,7 @@ void ServerStart(void *object) {
             int num_events = epoll_wait(epollFd, events, MAX_EVENTS, -1);
             if (num_events == -1) {
                 LOG_E("epoll_wait failed:%s", strerror(errno));
-                epoll_ctl(epollFd, EPOLL_CTL_DEL, timer_fd, &event);
+                epoll_ctl(epollFd, EPOLL_CTL_DEL, timer_fd, &timerEvent);
                 close(timer_fd);
                 break;
             }
@@ -205,7 +213,7 @@ void ServerStart(void *object) {
                     ssize_t s = read(timer_fd, &expirations, sizeof(expirations));
                     if (s != sizeof(expirations)) {
                         LOG_E("read failed:%s", strerror(errno));
-                        epoll_ctl(epollFd, EPOLL_CTL_DEL, timer_fd, &event);
+                        epoll_ctl(epollFd, EPOLL_CTL_DEL, timer_fd, &timerEvent);
                         close(timer_fd);
                         continue;
                     }
@@ -218,9 +226,26 @@ void ServerStart(void *object) {
                         OutputEvent ev = {.type=1};
                         outputClient->SendOutputEvent(ev);
                     }
+                } else if (events[i].data.fd == outputSocket) {
+                    OutputEvent ev;
+                    ssize_t s = read(outputSocket, &ev, sizeof(ev));
+                    if (s != sizeof(events)) {
+                        LOG_E("read client command failed:%s", strerror(errno));
+                        epoll_ctl(epollFd, EPOLL_CTL_DEL, timer_fd, &timerEvent);
+                        close(outputSocket);
+                        outputSocket = -1;
+                        continue;
+                    }
+                    if (ev.type == EVENT_CLIENT_EXIT) {
+                        notifyWindowChanged(1);
+                        epoll_ctl(epollFd, EPOLL_CTL_DEL, timer_fd, &timerEvent);
+                        close(outputSocket);
+                        outputSocket = -1;
+                    }
                 }
             }
         }
+        notifyWindowChanged(1);
         close(timer_fd);
         vm->DetachCurrentThread();
     }

@@ -4,16 +4,30 @@ import android.content.res.AssetManager;
 import android.view.Surface;
 
 public class Display {
-    public interface DisplayCallback{
+    public interface DisplayCallback {
         void onFinishInitialize();
+
+        void onClientExit();
     }
+
     private DisplayCallback displayCallback;
-    public void setDisplayCallback(DisplayCallback callback){
-        displayCallback=callback;
+
+    public void setDisplayCallback(DisplayCallback callback) {
+        displayCallback = callback;
     }
-    public void notifyWindowChanged(){
-        if (displayCallback!=null){
-            displayCallback.onFinishInitialize();
+
+    public void notifyWindowChanged(int state) {
+        if (displayCallback != null) {
+            switch (state) {
+                case 0: {
+                    displayCallback.onFinishInitialize();
+                    break;
+                }
+                case 1: {
+                    displayCallback.onClientExit();
+                    break;
+                }
+            }
         }
     }
 

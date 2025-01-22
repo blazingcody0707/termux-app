@@ -11,12 +11,18 @@ SocketIPCClient *clientRenderer = nullptr;
 static AHardwareBuffer *hwBuffer = nullptr;
 static int dataSocket = -1;
 static int connect_retry = 0;
-#define MAX_RETRY_TIMES 5
+#define MAX_RETRY_TIMES 12
 
 static InputServer *inputServer;
 
 #define SOCKET_NAME     "shard_texture_socket"
-
+void fun_sig(int sig)
+{
+    printf("receive killed signal,sig = %d\n",sig);
+//    signal(sig,SIG_DFL);
+    InputEvent ev = {.type=EVENT_CLIENT_EXIT};
+    send(inputServer->GetDataSocket(), &ev, sizeof(ev), MSG_DONTWAIT);
+}
 void ClientSetup() {
     char socketName[108];
     struct sockaddr_un serverAddr;
@@ -55,6 +61,7 @@ void ClientSetup() {
 
     }
 
+    signal(SIGINT, fun_sig);
 
     LOG_I("Client ClientSetup complete.");
     printf("%s\n", "Client ClientSetup complete.");
