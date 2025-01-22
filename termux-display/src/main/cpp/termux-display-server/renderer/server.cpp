@@ -17,31 +17,26 @@ static AAssetManager *nativeasset = nullptr;
 
 static JNIEnv *env;
 static jobject surface;
+static JavaVM *vm;
 
 static OutputClient *outputClient;
 
 #define SOCKET_NAME     "shard_texture_socket"
 
-static JNIEnv *displayEnv;
 static jobject displayObject;
 
 
 extern "C"
 JNIEXPORT void JNICALL
 Java_com_termux_display_Display_initJNIEnv(JNIEnv *env, jobject thiz) {
-    // TODO: implement initJNIEnv()
-    displayEnv = env;
-    displayObject = thiz;
+    displayObject = env->NewGlobalRef(thiz);;
 }
 void notifyWindowChanged() {
-    JavaVM *vm = NULL;
-    displayEnv->GetJavaVM(&vm);
-    vm->AttachCurrentThread(&displayEnv, vm);
+    vm->AttachCurrentThread(&env, vm);
 
-    jclass clazz = env->FindClass("com/termux/display/Display");
+    jclass clazz = env->GetObjectClass(displayObject);
     jmethodID methodId = env->GetMethodID(clazz, "notifyWindowChanged", "()V");
-    jobject obj =displayObject;
-    env->CallVoidMethod(obj, methodId);
+    env->CallVoidMethod(displayObject, methodId);
 
     vm->DetachCurrentThread();
 }
@@ -133,8 +128,9 @@ void DisplayServerInit() {
     LOG_D("    SERVER_APP_CMD_INIT_WINDOW");
     if (socketFd < 0) {
         pthread_t serverThread;
-        JavaVM *vm = NULL;
-        env->GetJavaVM(&vm);
+        if (!vm){
+            env->GetJavaVM(&vm);
+        }
         vm->AttachCurrentThread(&env, vm);
         pthread_create(&serverThread, nullptr, ServerSetup, vm);
     }
