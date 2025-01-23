@@ -2,7 +2,7 @@
 #include "client.h"
 
 void inputCallback(InputEvent ev) {
-    printf("%d", ev.type);
+    printf("%d\n", ev.type);
 }
 int main(int argc,const char** argv){
     DisplayClientInit(800, 600, 4);

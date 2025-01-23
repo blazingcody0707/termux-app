@@ -993,7 +993,7 @@ public class MainActivity extends LoriePreferences implements View.OnApplyWindow
             getLorieView().regenerate();
 
             // We should recover connection in the case if file descriptor for some reason was broken...
-            if (!connected)
+            if (!connected&&getLorieView().renderMode== LorieView.RenderMode.BUILTIN_X_SEVER)
                 tryConnect();
 
             if (connected)

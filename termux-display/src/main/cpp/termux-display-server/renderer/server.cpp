@@ -33,13 +33,9 @@ Java_com_termux_display_Display_initJNIEnv(JNIEnv *env, jobject thiz) {
 }
 
 void notifyWindowChanged(int state) {
-    vm->AttachCurrentThread(&env, vm);
-
     jclass clazz = env->GetObjectClass(displayObject);
     jmethodID methodId = env->GetMethodID(clazz, "notifyWindowChanged", "(I)V");
     env->CallVoidMethod(displayObject, methodId, state);
-
-    vm->DetachCurrentThread();
 }
 
 
@@ -53,8 +49,19 @@ Java_com_termux_display_Display_setServerNativeAssetManager(JNIEnv *env, jobject
 void setWindow(JNIEnv *e, jobject sf) {
     env = e;
     surface = sf;
+    if (!vm) {
+        env->GetJavaVM(&vm);
+    }
 }
+void *ServerSetup(void *object);
 
+void DisplayServerInit() {
+    if (socketFd < 0) {
+        LOG_D("    SERVER_APP_CMD_INIT");
+        pthread_t serverThread;
+        pthread_create(&serverThread, nullptr, ServerSetup, vm);
+    }
+}
 void *ServerSetup(void *object) {
     int ret;
     struct sockaddr_un serverAddr;
@@ -119,7 +126,7 @@ void *ServerSetup(void *object) {
             struct epoll_event outputEvent;
             outputEvent.events = EPOLLIN;
             outputEvent.data.fd = outputSocket;
-            if (epoll_ctl(epollFd, EPOLL_CTL_ADD, dataSocket, &outputEvent) == -1) {
+            if (epoll_ctl(epollFd, EPOLL_CTL_ADD, outputSocket, &outputEvent) == -1) {
                 LOG_E("output epoll_ctl failed:%s", strerror(errno));
             }
         }
@@ -129,18 +136,6 @@ void *ServerSetup(void *object) {
     close(socketFd);
     close(epollFd);
     return nullptr;
-}
-
-void DisplayServerInit() {
-    LOG_D("    SERVER_APP_CMD_INIT_WINDOW");
-    if (socketFd < 0) {
-        pthread_t serverThread;
-        if (!vm) {
-            env->GetJavaVM(&vm);
-        }
-        vm->AttachCurrentThread(&env, vm);
-        pthread_create(&serverThread, nullptr, ServerSetup, vm);
-    }
 }
 
 void ServerStart(void *object) {
@@ -158,7 +153,6 @@ void ServerStart(void *object) {
     {
 
         LOG_D("    datasocket prepared");
-        JavaVM *vm = (JavaVM *) object;
         vm->AttachCurrentThread(&env, nullptr);
         serverRenderer = SocketIPCServer::GetInstance();
         serverRenderer->m_NativeAssetManager = nativeasset;
@@ -167,6 +161,7 @@ void ServerStart(void *object) {
         LOG_D("    datasocket connected");
 
         notifyWindowChanged(0);
+        vm->DetachCurrentThread();
 
         int timer_fd = timerfd_create(CLOCK_MONOTONIC, TFD_NONBLOCK);
         if (timer_fd == -1) {
@@ -222,32 +217,29 @@ void ServerStart(void *object) {
                     if (isRunning && serverRenderer) {
                         serverRenderer->Draw();
                     }
-                    if (outputClient) {
-                        OutputEvent ev = {.type=1};
-                        outputClient->SendOutputEvent(ev);
-                    }
                 } else if (events[i].data.fd == outputSocket) {
                     OutputEvent ev;
-                    ssize_t s = read(outputSocket, &ev, sizeof(ev));
-                    if (s != sizeof(events)) {
-                        LOG_E("read client command failed:%s", strerror(errno));
-                        epoll_ctl(epollFd, EPOLL_CTL_DEL, timer_fd, &timerEvent);
-                        close(outputSocket);
-                        outputSocket = -1;
-                        continue;
-                    }
+                    read(outputSocket, &ev, sizeof(ev));
                     if (ev.type == EVENT_CLIENT_EXIT) {
+                        vm->AttachCurrentThread(&env, nullptr);
                         notifyWindowChanged(1);
-                        epoll_ctl(epollFd, EPOLL_CTL_DEL, timer_fd, &timerEvent);
+                        vm->DetachCurrentThread();
+                        struct epoll_event outputEvent;
+                        timerEvent.events = EPOLLIN;
+                        timerEvent.data.fd = outputSocket;
+                        epoll_ctl(epollFd, EPOLL_CTL_DEL, outputSocket, &outputEvent);
                         close(outputSocket);
                         outputSocket = -1;
+
+                        epoll_ctl(epollFd, EPOLL_CTL_DEL, timer_fd, &timerEvent);
+                        close(timer_fd);
+                        timer_fd = -1;
+                        close((timer_fd));
+                        return;
                     }
                 }
             }
         }
-        notifyWindowChanged(1);
-        close(timer_fd);
-        vm->DetachCurrentThread();
     }
 }
 

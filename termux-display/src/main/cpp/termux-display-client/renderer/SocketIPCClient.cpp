@@ -1,7 +1,6 @@
 
 #include <android/hardware_buffer.h>
 #include "SocketIPCClient.h"
-#include "LogUtil.h"
 
 #define STB_IMAGE_IMPLEMENTATION
 
@@ -21,7 +20,7 @@ void SocketIPCClient::Draw() {
                                NULL,
                                &shared_buffer);
     if (ret != 0) {
-        LOG_E("Failed to AHardwareBuffer_lock");
+        printf("%s\n","Failed to AHardwareBuffer_lock");
     }
 
     //Produces a gradient pattern, uses shift to set as red, blue, or green
@@ -56,7 +55,7 @@ void SocketIPCClient::Draw() {
     ret = AHardwareBuffer_unlock(buffer, NULL);
     stbi_image_free(chs);
     if (ret != 0) {
-        LOG_E("Failed to AHardwareBuffer_unlock");
+        printf("%s\n","Failed to AHardwareBuffer_unlock");
     }
 }
 
@@ -67,9 +66,7 @@ SocketIPCClient *SocketIPCClient::GetInstance() {
 }
 
 void SocketIPCClient::Destroy() {
-    DEBUG_LOG();
-
-    LOG_E("Destroy success.");
+    printf("%s\n","Destroy success.");
 }
 
 void SocketIPCClient::SetImageGeometry(uint32_t w, uint32_t h, uint32_t ch) {
@@ -81,7 +78,7 @@ void SocketIPCClient::SetImageGeometry(uint32_t w, uint32_t h, uint32_t ch) {
 void SocketIPCClient::Draw(const uint8_t *data) {
     if (m_ImgWidth < 1 ||
         m_ImgHeight < 1) {
-        LOG_E("Display Geometry Size Not Set");
+        printf("%s\n","Display Geometry Size Not Set");
         return;
     }
     int ret;
@@ -92,12 +89,12 @@ void SocketIPCClient::Draw(const uint8_t *data) {
                                NULL,
                                &shared_buffer);
     if (ret != 0) {
-        LOG_E("Failed to AHardwareBuffer_lock");
+        printf("%s\n","Failed to AHardwareBuffer_lock");
     }
 
     memcpy(shared_buffer, data, m_ImgWidth * m_ImgWidth * sizeof(uint32_t));
     ret = AHardwareBuffer_unlock(buffer, NULL);
     if (ret != 0) {
-        LOG_E("Failed to AHardwareBuffer_unlock");
+        printf("%s\n","Failed to AHardwareBuffer_unlock");
     }
 }

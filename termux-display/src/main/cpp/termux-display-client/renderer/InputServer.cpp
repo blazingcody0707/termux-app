@@ -1,5 +1,4 @@
 #include "InputServer.h"
-#include "LogUtil.h"
 #include "InputEvent.h"
 
 #include <stdint.h>
@@ -18,7 +17,7 @@ void InputServer::Init() {
 
     dataSocket = socket(AF_UNIX, SOCK_STREAM, 0);
     if (dataSocket < 0) {
-        LOG_E("socket: %s", strerror(errno));
+        printf("socket: %s", strerror(errno));
         exit(EXIT_FAILURE);
     }
 
@@ -33,11 +32,11 @@ void InputServer::Init() {
     int ret = connect(dataSocket, reinterpret_cast<const sockaddr *>(&serverAddr),
                       sizeof(struct sockaddr_un));
     if (ret < 0) {
-        LOG_E("connect: %s", strerror(errno));
+        printf("connect: %s", strerror(errno));
         exit(EXIT_FAILURE);
     }
 
-    LOG_I("Input Server Setup complete.");
+    printf("%s\n", "Input Server Setup complete.");
     pthread_create(&t, nullptr, work, this);
 }
 
@@ -46,6 +45,7 @@ void InputServer::Destroy() {
 }
 
 void InputServer::reset() {
+    running = false;
     close(dataSocket);
 }
 
@@ -74,10 +74,18 @@ void InputServer::SetInputHandler(InputHandler handler) {
     inputHandler = handler;
 }
 
+bool InputServer::isRunning() {
+    return running;
+}
+
+void InputServer::setRunning(bool run) {
+    running = run;
+}
+
 void *work(void *args) {
     auto *server = static_cast<InputServer *>(args);
-    bool running = true;
-    while (running) {
+    server->setRunning(true);
+    while (server->isRunning()) {
         InputEvent buf;
         recv(server->GetDataSocket(), &buf, sizeof(buf), MSG_WAITALL);
         if (server->GetInputHandler()) {
@@ -85,7 +93,7 @@ void *work(void *args) {
         } else if (server->GetCallback()) {
             server->GetCallback()->callback(buf);
         } else {
-            running = false;
+            server->setRunning(false);
         }
     }
     return nullptr;

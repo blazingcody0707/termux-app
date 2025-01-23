@@ -22,10 +22,15 @@ public:
 
     InputHandler GetInputHandler();
 
+    bool isRunning();
+    void setRunning(bool run);
+
 private:
     int dataSocket;
 
     pthread_t t;
+
+    bool running;
 
     InputEventCallback *inputEventCallback;
 

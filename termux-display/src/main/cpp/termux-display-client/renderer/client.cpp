@@ -3,7 +3,6 @@
 #include "client.h"
 #include "SocketIPCClient.h"
 #include "InputServer.h"
-#include "LogUtil.h"
 
 #define MAX_EVENTS 10
 static bool isRunning = false;
@@ -21,6 +20,10 @@ void SigTermHandler(int signum, siginfo_t *info, void *ptr) {
     write(STDERR_FILENO, SIGTERM_MSG, sizeof(SIGTERM_MSG));
     InputEvent ev = {.type=EVENT_CLIENT_EXIT};
     send(inputServer->GetDataSocket(), &ev, sizeof(ev), MSG_DONTWAIT);
+    isRunning = false;
+    inputServer->Destroy();
+    clientRenderer->Destroy();
+    close(dataSocket);
 }
 
 void CatchSigterm() {
@@ -30,7 +33,7 @@ void CatchSigterm() {
     sigact.sa_sigaction = SigTermHandler;
     sigact.sa_flags = SA_SIGINFO;
 
-    sigaction(SIGTERM, &sigact, NULL);
+//    sigaction(SIGTERM, &sigact, NULL);
     sigaction(SIGINT, &sigact, NULL);
 }
 
@@ -40,7 +43,6 @@ void ClientSetup() {
 
     dataSocket = socket(AF_UNIX, SOCK_STREAM, 0);
     if (dataSocket < 0) {
-        LOG_E("socket: %s", strerror(errno));
         printf("socket: %s\n", strerror(errno));
         exit(EXIT_FAILURE);
     }
@@ -57,10 +59,8 @@ void ClientSetup() {
         int ret = connect(dataSocket, reinterpret_cast<const sockaddr *>(&serverAddr),
                           sizeof(struct sockaddr_un));
         if (ret < 0) {
-            LOG_E("connect: %s, retry %d", strerror(errno), connect_retry + 1);
             printf("connect: %s, retry %d\n", strerror(errno), connect_retry + 1);
             if (connect_retry >= MAX_RETRY_TIMES) {
-                LOG_E("connect: %s, failed after %d times", strerror(errno), connect_retry + 1);
                 printf("connect: %s, failed after %d times\n", strerror(errno), connect_retry + 1);
                 exit(EXIT_FAILURE);
             }
@@ -71,13 +71,11 @@ void ClientSetup() {
         }
     }
     CatchSigterm();
-    LOG_I("Client ClientSetup complete.");
     printf("%s\n", "Client ClientSetup complete.");
 }
 
 void DisplayClientInit(uint32_t width, uint32_t height, uint32_t channel) {
-    LOG_D("    CLIENT_APP_CMD_INIT_WINDOW");
-    printf("%s\n", "    CLIENT_APP_CMD_INIT_WINDOW");
+    printf("%s\n", "    CLIENT_APP_CMD_INIT");
     sleep(1);
     if (dataSocket < 0) {
         ClientSetup();
@@ -95,7 +93,6 @@ void DisplayClientInit(uint32_t width, uint32_t height, uint32_t channel) {
                 AHARDWAREBUFFER_USAGE_GPU_SAMPLED_IMAGE;
         int rtCode = AHardwareBuffer_allocate(&hwDesc, &hwBuffer);
         if (rtCode != 0 || !hwBuffer) {
-            LOG_E("Failed to allocate hardware buffer.");
             printf("%s\n", "Failed to allocate hardware buffer.");
             exit(EXIT_FAILURE);
         }
@@ -107,13 +104,13 @@ void DisplayClientInit(uint32_t width, uint32_t height, uint32_t channel) {
 }
 
 void DisplayClientStart() {
-    LOG_D("----------------------------------------------------------------");
-    LOG_D("    DisplayClientStart()");
+    printf("%s\n","----------------------------------------------------------------");
+    printf("%s\n","    DisplayClientStart()");
     isRunning = true;
 
     int timer_fd = timerfd_create(CLOCK_MONOTONIC, TFD_NONBLOCK);
     if (timer_fd == -1) {
-        LOG_E("timerfd_create failed:%s", strerror(errno));
+        printf("timerfd_create failed:%s\n", strerror(errno));
         exit(EXIT_FAILURE);
     }
 
@@ -124,14 +121,14 @@ void DisplayClientStart() {
     timer_spec.it_value.tv_nsec = 30000000;//初始延迟秒触发
 
     if (timerfd_settime(timer_fd, 0, &timer_spec, NULL) == -1) {
-        LOG_E("timerfd_settime failed:%s", strerror(errno));
+        printf("timerfd_settime failed:%s\n", strerror(errno));
         close(timer_fd);
         exit(EXIT_FAILURE);
     }
 
     int epoll_fd = epoll_create1(EPOLL_CLOEXEC);
     if (epoll_fd == -1) {
-        LOG_E("epoll_create failed:%s", strerror(errno));
+        printf("epoll_create failed:%s\n", strerror(errno));
         close(timer_fd);
         exit(EXIT_FAILURE);
     }
@@ -140,7 +137,7 @@ void DisplayClientStart() {
     event.events = EPOLLIN;
     event.data.fd = timer_fd;
     if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, timer_fd, &event) == -1) {
-        LOG_E("epoll_ctl failed:%s", strerror(errno));
+        printf("epoll_ctl failed:%s\n", strerror(errno));
         close(epoll_fd);
         close(timer_fd);
         exit(EXIT_FAILURE);
@@ -151,7 +148,7 @@ void DisplayClientStart() {
     while (true) {
         int num_events = epoll_wait(epoll_fd, events, MAX_EVENTS, -1);
         if (num_events == -1) {
-            LOG_E("epoll_wait failed:%s", strerror(errno));
+            printf("epoll_wait failed:%s\n", strerror(errno));
             close(epoll_fd);
             close(timer_fd);
             exit(EXIT_FAILURE);
@@ -162,7 +159,7 @@ void DisplayClientStart() {
                 uint64_t expirations;
                 ssize_t s = read(timer_fd, &expirations, sizeof(expirations));
                 if (s != sizeof(expirations)) {
-                    LOG_E("read failed:%s", strerror(errno));
+                    printf("read failed:%s\n", strerror(errno));
                     close(epoll_fd);
                     close(timer_fd);
                     exit(EXIT_FAILURE);
@@ -170,7 +167,11 @@ void DisplayClientStart() {
                 // LOG_I("Client Timer expired!");
                 // Add your code to handle timer expiration asynchronously
                 if (!isRunning) {
-                    break;
+                    printf("receive kill signal\n");
+                    close(epoll_fd);
+                    close(timer_fd);
+                    AHardwareBuffer_release(hwBuffer);
+                    return;
                 }
                 if (clientRenderer) {
                     clientRenderer->Draw();
