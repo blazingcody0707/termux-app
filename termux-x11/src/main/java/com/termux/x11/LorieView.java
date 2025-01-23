@@ -82,6 +82,11 @@ public class LorieView extends SurfaceView implements InputStub {
         @Override
         public void surfaceCreated(@NonNull SurfaceHolder holder) {
             holder.setFormat(PixelFormat.BGRA_8888);
+            if (renderMode == RenderMode.BUILTIN_RENDER_SEVER) {
+                Display.setServerNativeAssetManager(getContext().getAssets());
+                Display.initDisplayWindow(holder.getSurface(), "screen");
+                LorieView.this.displayAdapter.initJNIEnv();
+            }
         }
 
         @Override
@@ -96,10 +101,6 @@ public class LorieView extends SurfaceView implements InputStub {
             getDimensionsFromSettings();
             if (renderMode == RenderMode.BUILTIN_X_SEVER) {
                 mCallback.changed(holder.getSurface(), width, height, p.x, p.y);
-            } else if (renderMode == RenderMode.BUILTIN_RENDER_SEVER) {
-                Display.setServerNativeAssetManager(getContext().getAssets());
-                Display.windowChanged(holder.getSurface(), "screen");
-                LorieView.this.displayAdapter.initJNIEnv();
             }
 
         }

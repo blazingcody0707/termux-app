@@ -10,6 +10,8 @@ SocketIPCClient *clientRenderer = nullptr;
 static AHardwareBuffer *hwBuffer = nullptr;
 static int dataSocket = -1;
 static int connect_retry = 0;
+static  int timer_fd =-1;
+static int epoll_fd =-1;
 #define MAX_RETRY_TIMES 12
 
 #define SIGTERM_MSG "KILL | SIGTERM received.\n"
@@ -21,8 +23,11 @@ void SigTermHandler(int signum, siginfo_t *info, void *ptr) {
     InputEvent ev = {.type=EVENT_CLIENT_EXIT};
     send(inputServer->GetDataSocket(), &ev, sizeof(ev), MSG_DONTWAIT);
     isRunning = false;
+    close(epoll_fd);
+    close(timer_fd);
     inputServer->Destroy();
     clientRenderer->Destroy();
+    AHardwareBuffer_release(hwBuffer);
     close(dataSocket);
 }
 
@@ -108,7 +113,7 @@ void DisplayClientStart() {
     printf("%s\n","    DisplayClientStart()");
     isRunning = true;
 
-    int timer_fd = timerfd_create(CLOCK_MONOTONIC, TFD_NONBLOCK);
+    timer_fd = timerfd_create(CLOCK_MONOTONIC, TFD_NONBLOCK);
     if (timer_fd == -1) {
         printf("timerfd_create failed:%s\n", strerror(errno));
         exit(EXIT_FAILURE);
@@ -126,7 +131,7 @@ void DisplayClientStart() {
         exit(EXIT_FAILURE);
     }
 
-    int epoll_fd = epoll_create1(EPOLL_CLOEXEC);
+    epoll_fd = epoll_create1(EPOLL_CLOEXEC);
     if (epoll_fd == -1) {
         printf("epoll_create failed:%s\n", strerror(errno));
         close(timer_fd);

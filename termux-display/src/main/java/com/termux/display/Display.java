@@ -33,7 +33,7 @@ public class Display {
 
     native public void initJNIEnv();
 
-    static native public void windowChanged(Surface surface, String name);
+    static native public void initDisplayWindow(Surface surface, String name);
 
     static native public void startClient();
 

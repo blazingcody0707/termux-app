@@ -235,6 +235,8 @@ void ServerStart(void *object) {
                         close(timer_fd);
                         timer_fd = -1;
                         close((timer_fd));
+                        AHardwareBuffer_release(hwBuffer);
+
                         return;
                     }
                 }
