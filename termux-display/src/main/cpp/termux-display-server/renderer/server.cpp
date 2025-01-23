@@ -53,6 +53,7 @@ void setWindow(JNIEnv *e, jobject sf) {
         env->GetJavaVM(&vm);
     }
 }
+
 void *ServerSetup(void *object);
 
 void DisplayServerInit() {
@@ -62,6 +63,7 @@ void DisplayServerInit() {
         pthread_create(&serverThread, nullptr, ServerSetup, vm);
     }
 }
+
 void *ServerSetup(void *object) {
     int ret;
     struct sockaddr_un serverAddr;
@@ -114,10 +116,10 @@ void *ServerSetup(void *object) {
             break;
         }
         if (dataSocket < 1) {
-            LOG_I("accept dataSocket: %d", dataSocket);
             dataSocket = currentSocket;
             pthread_t t;
             pthread_create(&t, nullptr, reinterpret_cast<void *(*)(void *)>(ServerStart), object);
+            LOG_I("accept dataSocket: %d", currentSocket);
         } else {
             outputSocket = currentSocket;
             outputClient = new OutputClient;
@@ -129,6 +131,7 @@ void *ServerSetup(void *object) {
             if (epoll_ctl(epollFd, EPOLL_CTL_ADD, outputSocket, &outputEvent) == -1) {
                 LOG_E("output epoll_ctl failed:%s", strerror(errno));
             }
+            LOG_I("accept outputSocket: %d", currentSocket);
         }
     }
     LOG_D("Close dataSocket");
@@ -222,8 +225,10 @@ void ServerStart(void *object) {
                     read(outputSocket, &ev, sizeof(ev));
                     if (ev.type == EVENT_CLIENT_EXIT) {
                         vm->AttachCurrentThread(&env, nullptr);
+                        serverRenderer->Destroy();
                         notifyWindowChanged(1);
                         vm->DetachCurrentThread();
+
                         struct epoll_event outputEvent;
                         timerEvent.events = EPOLLIN;
                         timerEvent.data.fd = outputSocket;
@@ -231,11 +236,16 @@ void ServerStart(void *object) {
                         close(outputSocket);
                         outputSocket = -1;
 
+                        close(dataSocket);
+                        dataSocket = -1;
+
                         epoll_ctl(epollFd, EPOLL_CTL_DEL, timer_fd, &timerEvent);
                         close(timer_fd);
                         timer_fd = -1;
                         close((timer_fd));
+
                         AHardwareBuffer_release(hwBuffer);
+                        hwBuffer = nullptr;
 
                         return;
                     }

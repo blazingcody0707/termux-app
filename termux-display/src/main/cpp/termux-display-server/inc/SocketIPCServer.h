@@ -29,7 +29,6 @@ public:
     void Draw();
 
     AAssetManager *m_NativeAssetManager;
-    struct android_app *m_GlobalApp;
 private:
     SocketIPCServer() = default;
 
@@ -55,17 +54,8 @@ private:
     GLint m_VertexShader;
     GLint m_FragShader;
     GLuint m_Program;
-    uint32_t m_ImgWidth = 1024;
-    uint32_t m_ImgHeight = 1024;
 
     GLuint m_InputTexture;
-    GLuint m_Framebuffer = 0;
     EGLImageKHR m_NativeBufferImage;
     AHardwareBuffer *buffer;
-
-    size_t len0, len1, len2;
-    uint8_t *imageData0, *imageData1, *imageData2;
-    int cur = 0;
-
-    uint8_t *chs;
 };

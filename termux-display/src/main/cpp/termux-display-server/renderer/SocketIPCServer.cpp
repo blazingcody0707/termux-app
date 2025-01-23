@@ -66,15 +66,11 @@ void SocketIPCServer::Init(AHardwareBuffer *hwBuffer, JNIEnv *e, jobject sf) {
     env = e;
     surface = sf;
     buffer = hwBuffer;
-    chs = static_cast<uint8_t *>(calloc(800 * 600, sizeof(uint32_t)));
 
     jclass Surface = env->FindClass("android/view/Surface");
     Surface_release = env->GetMethodID(Surface, "release", "()V");
     Surface_destroy = env->GetMethodID(Surface, "destroy", "()V");
 
-    imageData0 = ReaderImage("textures/awesomeface-0.png", &len0);
-    imageData1 = ReaderImage("textures/awesomeface-1.png", &len1);
-    imageData2 = ReaderImage("textures/awesomeface-2.png", &len2);
     if (InitEGLEnv() != 0) return;
     CreateProgram();
 
@@ -95,21 +91,6 @@ void SocketIPCServer::Init(AHardwareBuffer *hwBuffer, JNIEnv *e, jobject sf) {
         glBindTexture(GL_TEXTURE_2D, 0);
 
     }
-
-    /*if(imageData0){
-        int width, height, channel;
-        uint8_t *chs = stbi_load_from_memory(imageData0, len0, &width, &height, &channel, STBI_rgb_alpha);
-        glBindTexture(GL_TEXTURE_2D, m_InputTexture);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, chs);
-        glBindTexture(GL_TEXTURE_2D, 0);
-        stbi_image_free(chs);
-    }
-    DisplayDraw();*/
 }
 
 void SocketIPCServer::Destroy() {
@@ -120,64 +101,10 @@ void SocketIPCServer::Destroy() {
     glDeleteShader(m_FragShader);
     glDeleteProgram(m_Program);
     DestroyEGLEnv();
-    LOG_E("Destroy success.");
+    LOG_I("Destroy success.");
 }
 
 void SocketIPCServer::Draw() {
-    /* uint8_t *chs;
-     if (imageData0) {
-         int width, height, channel;
-         int id = cur % 3;
-         switch (id) {
-             case 0: {
-                 chs = stbi_load_from_memory(imageData0, len0, &width, &height, &channel,
-                                             STBI_rgb_alpha);
-                 break;
-             }
-             case 1: {
-                 chs = stbi_load_from_memory(imageData1, len1, &width, &height, &channel,
-                                             STBI_rgb_alpha);
-                 break;
-             }
-             case 2: {
-                 chs = stbi_load_from_memory(imageData2, len2, &width, &height, &channel,
-                                             STBI_rgb_alpha);
-                 break;
-             }
-         }
-         cur++;
- 
-         chs = stbi_load_from_memory(imageData0, len0, &width, &height, &channel,
-                                     STBI_rgb_alpha);
-         glBindTexture(GL_TEXTURE_2D, m_InputTexture);
-         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, chs);
-         glBindTexture(GL_TEXTURE_2D, 0);
-         stbi_image_free(chs);
-     }*/
-//    {
-//        int ret;
-//        void *shared_buffer;
-//
-//        ret = AHardwareBuffer_lock(buffer,
-//                                   AHARDWAREBUFFER_USAGE_CPU_READ_MASK,
-//                                   -1, // no fence in demo
-//                                   NULL,
-//                                   &shared_buffer);
-//        if (ret != 0) {
-//            LOG_E("Failed to AHardwareBuffer_lock");
-//        }
-//
-//        ret = AHardwareBuffer_unlock(buffer, NULL);
-//        if (ret != 0) {
-//            LOG_E("Failed to AHardwareBuffer_unlock");
-//        }
-//
-//    }
 //    BEGIN_TIME(__FUNCTION__);
     glUseProgram(m_Program);
     {
@@ -277,30 +204,6 @@ int SocketIPCServer::InitEGLEnv() {
             break;
         }
 
-//        m_EglSurface = eglCreateWindowSurface(m_EglDisplay, m_EglConfig, m_GlobalApp->window,
-//                                              nullptr);
-//        if (m_EglSurface == EGL_NO_SURFACE) {
-//            switch (eglGetError()) {
-//                case EGL_BAD_ALLOC:
-//                    // Not enough resources available. Handle and recover
-//                    LOG_E("BgRender::CreateGlesEnv Not enough resources available");
-//                    break;
-//                case EGL_BAD_CONFIG:
-//                    // Verify that provided EGLConfig is valid
-//                    LOG_E("BgRender::CreateGlesEnv provided EGLConfig is invalid");
-//                    break;
-//                case EGL_BAD_PARAMETER:
-//                    // Verify that the EGL_WIDTH and EGL_HEIGHT are
-//                    // non-negative values
-//                    LOG_E("BgRender::CreateGlesEnv provided EGL_WIDTH and EGL_HEIGHT is invalid");
-//                    break;
-//                case EGL_BAD_MATCH:
-//                    // Check window and EGLConfig attributes to determine
-//                    // compatibility and pbuffer-texture parameters
-//                    LOG_E("BgRender::CreateGlesEnv Check window and EGLConfig attributes");
-//                    break;
-//            }
-//        }
         RenderSetWindow(env, surface);
         m_EglContext = eglCreateContext(m_EglDisplay, m_EglConfig, EGL_NO_CONTEXT, ctxAttr);
         if (m_EglContext == EGL_NO_CONTEXT) {
@@ -314,11 +217,11 @@ int SocketIPCServer::InitEGLEnv() {
         }
 
         if (!eglMakeCurrent(m_EglDisplay, m_EglSurface, m_EglSurface, m_EglContext)) {
-            LOG_E("BgRender::CreateGlesEnv MakeCurrent failed");
+            LOG_E("Render::CreateGlesEnv MakeCurrent failed");
             resultCode = -1;
             break;
         }
-        LOG_I("BgRender::Server CreateGlesEnv initialize success!");
+        LOG_I("Render::Server CreateGlesEnv initialize success!");
     } while (false);
 
     if (resultCode != 0) {
@@ -403,7 +306,6 @@ void SocketIPCServer::DestroyEGLEnv() {
     m_EglDisplay = EGL_NO_DISPLAY;
     m_EglSurface = EGL_NO_SURFACE;
     m_EglContext = EGL_NO_CONTEXT;
-    delete []chs;
 }
 
 void SocketIPCServer::CreateProgram() {
