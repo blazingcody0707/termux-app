@@ -1,4 +1,5 @@
 cmake_minimum_required(VERSION 3.4.1)
+project(termux-display)
 include_directories(${CMAKE_SOURCE_DIR}/termux-display-server/include)
 include_directories(${CMAKE_SOURCE_DIR}/termux-display-client/include)
 include_directories(${CMAKE_SOURCE_DIR}/termux-display-server/inc)

@@ -46,14 +46,15 @@ Java_com_termux_display_Display_setServerNativeAssetManager(JNIEnv *env, jobject
     if (!nativeasset) { nativeasset = AAssetManager_fromJava(env, asset_manager); }
 }
 
-void setWindow(JNIEnv *e, jobject sf) {
-    env = e;
-    surface = sf;
+void setNativeWindow(JNIEnv *env) {
+    env = env;
     if (!vm) {
         env->GetJavaVM(&vm);
     }
 }
-
+void setSurface(jobject sf){
+    surface = sf;
+}
 void *ServerSetup(void *object);
 
 void DisplayServerInit() {
@@ -173,8 +174,9 @@ void ServerStart(void *object) {
         }
 
         struct itimerspec timer_spec;
-        timer_spec.it_interval.tv_sec = 0; // 1-second interval
-        timer_spec.it_interval.tv_nsec = 30000000;
+        timer_spec.it_interval.tv_sec = 1; // 1-second interval
+//        timer_spec.it_interval.tv_nsec = 30000000;
+        timer_spec.it_interval.tv_nsec = 0;
         timer_spec.it_value.tv_sec = 0;
         timer_spec.it_value.tv_nsec = 30000000;//初始延迟秒触发
 

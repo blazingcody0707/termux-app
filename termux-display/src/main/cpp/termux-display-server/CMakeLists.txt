@@ -1,4 +1,5 @@
 cmake_minimum_required(VERSION 3.10.1)
+project(termux-display-server)
 set(APP_GLUE_DIR ${ANDROID_NDK}/sources/android/native_app_glue)
 include_directories(${APP_GLUE_DIR})
 #add_library( app-glue STATIC ${APP_GLUE_DIR}/android_native_app_glue.c)

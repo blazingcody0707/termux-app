@@ -10,7 +10,9 @@
 #include <jni.h>
 #include "OutputEvent.h"
 
-void setWindow(JNIEnv *env, jobject sf);
+void setNativeWindow(JNIEnv *env);
+
+void setSurface(jobject sf);
 
 void DisplayServerInit();
 

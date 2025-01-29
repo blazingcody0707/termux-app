@@ -18,8 +18,8 @@ extern "C"
 JNIEXPORT void JNICALL
 Java_com_termux_display_Display_initDisplayWindow(JNIEnv *env, jclass clazz, jobject surface,
                                                   jstring name) {
-    jobject sf = surface ? env->NewGlobalRef(surface) : NULL;
-    setWindow(env, sf);
+//    jobject sf = surface ? env->NewGlobalRef(surface) : NULL;
+    setNativeWindow(env);
     DisplayServerInit();
 }
 extern "C"
@@ -52,9 +52,10 @@ Java_com_termux_display_Display_sendClipboardEvent(JNIEnv *env, jobject thiz, jb
 }
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_termux_display_Display_sendWindowChange(JNIEnv *env, jclass clazz, jint width, jint height,
-                                                 jint framerate) {
-    // TODO: implement sendWindowChange()
+Java_com_termux_display_Display_sendWindowChange(JNIEnv *env, jclass clazz, jobject surface) {
+    jobject sf = surface ? env->NewGlobalRef(surface) : NULL;
+    setSurface(sf);
+
 }
 extern "C"
 JNIEXPORT void JNICALL

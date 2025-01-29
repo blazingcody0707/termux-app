@@ -48,7 +48,7 @@ public class Display {
 
     static public native void sendClipboardEvent(byte[] text);
 
-    static public native void sendWindowChange(int width, int height, int framerate);
+    static public native void sendWindowChange(Surface surface);
 
     static native public void sendMouseEvent(float x, float y, int whichButton, boolean buttonDown, boolean relative);
 

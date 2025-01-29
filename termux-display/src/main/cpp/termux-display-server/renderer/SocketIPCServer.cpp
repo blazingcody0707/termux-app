@@ -48,11 +48,11 @@ static const char *egl_error_str(EGLint ret) {
 }
 
 static EGLNativeWindowType win = 0;
-static JavaVM *vm;
 static JNIEnv *env;
 static jobject surface = NULL;
 static jmethodID Surface_release = NULL;
 static jmethodID Surface_destroy = NULL;
+static int cnt;
 #define GL_CHECK(...) if(glGetError() != 0) LOG_E("CHECK_GL_ERROR %s glGetError = %s[%d], line = %d, ",  __FUNCTION__, egl_error_str(glGetError()), glGetError(), __LINE__)
 
 SocketIPCServer SocketIPCServer::s_Renderer{};
@@ -76,6 +76,9 @@ void SocketIPCServer::Init(AHardwareBuffer *hwBuffer, JNIEnv *e, jobject sf) {
 
     glGenTextures(1, &m_InputTexture);
     if (hwBuffer && m_NativeBufferImage == nullptr) {
+        if (cnt > 0) {
+            LOG_I("cnt:%d", cnt);
+        }
         EGLClientBuffer clientBuffer = eglGetNativeClientBufferANDROID(hwBuffer);
         EGLint eglImageAttributes[] = {EGL_IMAGE_PRESERVED_KHR, EGL_TRUE, EGL_NONE};
         m_NativeBufferImage = eglCreateImageKHR(m_EglDisplay, EGL_NO_CONTEXT,
@@ -89,7 +92,7 @@ void SocketIPCServer::Init(AHardwareBuffer *hwBuffer, JNIEnv *e, jobject sf) {
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         glEGLImageTargetTexture2DOES(GL_TEXTURE_2D, m_NativeBufferImage);
         glBindTexture(GL_TEXTURE_2D, 0);
-
+        cnt++;
     }
 }
 
@@ -185,37 +188,37 @@ int SocketIPCServer::InitEGLEnv() {
         m_EglDisplay = eglGetDisplay(EGL_DEFAULT_DISPLAY);
         if (m_EglDisplay == EGL_NO_DISPLAY) {
             //Unable to open connection to local windowing system
-            LOG_E("BgRender::CreateGlesEnv Unable to open connection to local windowing system");
+            LOG_E("Render::CreateGlesEnv Unable to open connection to local windowing system");
             resultCode = -1;
             break;
         }
 
         if (!eglInitialize(m_EglDisplay, &eglMajVers, &eglMinVers)) {
             // Unable to initialize EGL. Handle and recover
-            LOG_E("BgRender::CreateGlesEnv Unable to initialize EGL");
+            LOG_E("Render::CreateGlesEnv Unable to initialize EGL");
             resultCode = -1;
             break;
         }
-        LOG_I("BgRender::CreateGlesEnv EGL init with version %d.%d", eglMajVers, eglMinVers);
+        LOG_I("Render::CreateGlesEnv EGL init with version %d.%d", eglMajVers, eglMinVers);
 
         if (!eglChooseConfig(m_EglDisplay, confAttr, &m_EglConfig, 1, &numConfigs)) {
-            LOG_E("BgRender::CreateGlesEnv some config is wrong");
+            LOG_E("Render::CreateGlesEnv some config is wrong");
             resultCode = -1;
             break;
         }
 
         RenderSetWindow(env, surface);
+
         m_EglContext = eglCreateContext(m_EglDisplay, m_EglConfig, EGL_NO_CONTEXT, ctxAttr);
         if (m_EglContext == EGL_NO_CONTEXT) {
             EGLint error = eglGetError();
             if (error == EGL_BAD_CONFIG) {
                 // Handle error and recover
-                LOG_E("BgRender::CreateGlesEnv EGL_BAD_CONFIG");
+                LOG_E("Render::CreateGlesEnv EGL_BAD_CONFIG");
                 resultCode = -1;
                 break;
             }
         }
-
         if (!eglMakeCurrent(m_EglDisplay, m_EglSurface, m_EglSurface, m_EglContext)) {
             LOG_E("Render::CreateGlesEnv MakeCurrent failed");
             resultCode = -1;
@@ -225,12 +228,15 @@ int SocketIPCServer::InitEGLEnv() {
     } while (false);
 
     if (resultCode != 0) {
-        LOG_E("BgRender::CreateGlesEnv fail");
+        LOG_E("Render::CreateGlesEnv fail");
     }
     return resultCode;
 }
 
 void SocketIPCServer::RenderSetWindow(JNIEnv *env, jobject new_surface) {
+    if (cnt > 0) {
+        LOG_I("cnt:%d", cnt);
+    }
     EGLNativeWindowType window;
     if (new_surface && surface && new_surface != surface &&
         env->IsSameObject(new_surface, surface)) {
@@ -306,6 +312,7 @@ void SocketIPCServer::DestroyEGLEnv() {
     m_EglDisplay = EGL_NO_DISPLAY;
     m_EglSurface = EGL_NO_SURFACE;
     m_EglContext = EGL_NO_CONTEXT;
+    m_NativeBufferImage = nullptr;
 }
 
 void SocketIPCServer::CreateProgram() {

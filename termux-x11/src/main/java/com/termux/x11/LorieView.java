@@ -101,6 +101,8 @@ public class LorieView extends SurfaceView implements InputStub {
             getDimensionsFromSettings();
             if (renderMode == RenderMode.BUILTIN_X_SEVER) {
                 mCallback.changed(holder.getSurface(), width, height, p.x, p.y);
+            }else if (renderMode==RenderMode.BUILTIN_RENDER_SEVER){
+                Display.sendWindowChange(holder.getSurface());
             }
 
         }
