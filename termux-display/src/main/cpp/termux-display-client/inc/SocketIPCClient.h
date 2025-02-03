@@ -2,14 +2,7 @@
 
 #include <cstdint>
 #include <string>
-#include <EGL/egl.h>
-#include <EGL/eglext.h>
-#include <GLES2/gl2.h>
-#include <GLES2/gl2ext.h>
-#include <GLES2/gl2platform.h>
 #include <android/hardware_buffer.h>
-#include <android/asset_manager.h>
-#include <android/asset_manager_jni.h>
 
 class SocketIPCClient {
 public:

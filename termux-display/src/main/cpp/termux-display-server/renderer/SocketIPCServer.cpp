@@ -244,7 +244,6 @@ void SocketIPCServer::RenderSetWindow(JNIEnv *env, jobject new_surface) {
         new_surface = NULL;
         return;
     }
-
     window = new_surface ? ANativeWindow_fromSurface(env, new_surface) : NULL;
     int width = window ? ANativeWindow_getWidth(window) : 0;
     int height = window ? ANativeWindow_getHeight(window) : 0;
