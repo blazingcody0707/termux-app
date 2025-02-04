@@ -78,13 +78,29 @@ public class LorieView extends SurfaceView implements InputStub {
     private static boolean clipboardSyncEnabled = false;
     private Callback mCallback;
     private final Point p = new Point();
+    private SurfaceHolder mHolder;
+    public void updateWindow(){
+        if (mHolder!=null){
+            if(mHolder.getSurface()==null){
+                Log.d("SurfaceChangedListener", "Surface was null");
+                return;
+            }
+            int width = getMeasuredWidth();
+            int height = getMeasuredHeight();
+            Log.d("SurfaceChangedListener", "Surface was update: " + width + "x" + height);
+            if (renderMode==RenderMode.BUILTIN_RENDER_SEVER){
+                Display.sendWindowChange(mHolder.getSurface());
+            }
+        }
+    }
     private final SurfaceHolder.Callback mSurfaceCallback = new SurfaceHolder.Callback() {
         @Override
         public void surfaceCreated(@NonNull SurfaceHolder holder) {
+            mHolder = holder;
             holder.setFormat(PixelFormat.BGRA_8888);
             if (renderMode == RenderMode.BUILTIN_RENDER_SEVER) {
                 Display.setServerNativeAssetManager(getContext().getAssets());
-                Display.initDisplayWindow(holder.getSurface(), "screen");
+                Display.initDisplayWindow("screen");
                 LorieView.this.displayAdapter.initJNIEnv();
             }
         }
@@ -93,7 +109,7 @@ public class LorieView extends SurfaceView implements InputStub {
         public void surfaceChanged(@NonNull SurfaceHolder holder, int f, int width, int height) {
             width = getMeasuredWidth();
             height = getMeasuredHeight();
-
+//            mHolder = holder;
             Log.d("SurfaceChangedListener", "Surface was changed: " + width + "x" + height);
             if (mCallback == null)
                 return;
@@ -101,19 +117,19 @@ public class LorieView extends SurfaceView implements InputStub {
             getDimensionsFromSettings();
             if (renderMode == RenderMode.BUILTIN_X_SEVER) {
                 mCallback.changed(holder.getSurface(), width, height, p.x, p.y);
-            }else if (renderMode==RenderMode.BUILTIN_RENDER_SEVER){
-                Display.sendWindowChange(holder.getSurface());
             }
-
         }
 
         @Override
         public void surfaceDestroyed(@NonNull SurfaceHolder holder) {
-            if (mCallback != null)
+            if (mCallback != null&&renderMode == RenderMode.BUILTIN_X_SEVER)
                 mCallback.changed(holder.getSurface(), 0, 0, 0, 0);
         }
     };
 
+    public SurfaceHolder.Callback getSurfaceHolderCallback(){
+        return mSurfaceCallback;
+    }
     public LorieView(Context context) {
         super(context);
         init();

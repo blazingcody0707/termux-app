@@ -8,6 +8,8 @@ public class Display {
         void onFinishInitialize();
 
         void onClientExit();
+
+        void onNewClientCreate();
     }
 
     private DisplayCallback displayCallback;
@@ -27,13 +29,17 @@ public class Display {
                     displayCallback.onClientExit();
                     break;
                 }
+                case 2:{
+                    displayCallback.onNewClientCreate();
+                    break;
+                }
             }
         }
     }
 
     native public void initJNIEnv();
 
-    static native public void initDisplayWindow(Surface surface, String name);
+    static native public void initDisplayWindow(String name);
 
     static native public void startClient();
 

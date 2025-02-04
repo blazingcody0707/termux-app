@@ -46,11 +46,9 @@ Java_com_termux_display_Display_setServerNativeAssetManager(JNIEnv *env, jobject
     if (!nativeasset) { nativeasset = AAssetManager_fromJava(env, asset_manager); }
 }
 
-void setNativeWindow(JNIEnv *env) {
-    env = env;
-    if (!vm) {
-        env->GetJavaVM(&vm);
-    }
+void setNativeWindow(JNIEnv *ev) {
+    env = ev;
+    env->GetJavaVM(&vm);
 }
 void setSurface(jobject sf){
     surface = sf;
@@ -158,6 +156,7 @@ void ServerStart(void *object) {
 
         LOG_D("    datasocket prepared");
         vm->AttachCurrentThread(&env, nullptr);
+        notifyWindowChanged(2);
         serverRenderer = SocketIPCServer::GetInstance();
         serverRenderer->m_NativeAssetManager = nativeasset;
         serverRenderer->Init(hwBuffer, env, surface);
@@ -227,7 +226,7 @@ void ServerStart(void *object) {
                     read(outputSocket, &ev, sizeof(ev));
                     if (ev.type == EVENT_CLIENT_EXIT) {
                         vm->AttachCurrentThread(&env, nullptr);
-                        serverRenderer->Destroy();
+//                        serverRenderer->Destroy();
                         notifyWindowChanged(1);
                         vm->DetachCurrentThread();
 
@@ -244,7 +243,6 @@ void ServerStart(void *object) {
                         epoll_ctl(epollFd, EPOLL_CTL_DEL, timer_fd, &timerEvent);
                         close(timer_fd);
                         timer_fd = -1;
-                        close((timer_fd));
 
                         AHardwareBuffer_release(hwBuffer);
                         hwBuffer = nullptr;

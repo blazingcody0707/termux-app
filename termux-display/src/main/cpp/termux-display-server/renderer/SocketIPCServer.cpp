@@ -71,8 +71,13 @@ void SocketIPCServer::Init(AHardwareBuffer *hwBuffer, JNIEnv *e, jobject sf) {
     Surface_release = env->GetMethodID(Surface, "release", "()V");
     Surface_destroy = env->GetMethodID(Surface, "destroy", "()V");
 
-    if (InitEGLEnv() != 0) return;
-    CreateProgram();
+//    if (InitEGLEnv() != 0) return;
+    if(cnt<1){
+        InitEGLEnv();
+        CreateProgram();
+    }
+//    InitEGLEnv();
+//    CreateProgram();
 
     glGenTextures(1, &m_InputTexture);
     if (hwBuffer && m_NativeBufferImage == nullptr) {
@@ -105,6 +110,20 @@ void SocketIPCServer::Destroy() {
     glDeleteProgram(m_Program);
     DestroyEGLEnv();
     LOG_I("Destroy success.");
+}
+
+void SocketIPCServer::DestroyEGLEnv() {
+    if (m_EglDisplay != EGL_NO_DISPLAY) {
+        eglMakeCurrent(m_EglDisplay, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
+        eglDestroyContext(m_EglDisplay, m_EglContext);
+        eglDestroySurface(m_EglDisplay, m_EglSurface);
+        eglReleaseThread();
+        eglTerminate(m_EglDisplay);
+    }
+    m_EglDisplay = EGL_NO_DISPLAY;
+    m_EglSurface = EGL_NO_SURFACE;
+    m_EglContext = EGL_NO_CONTEXT;
+    m_NativeBufferImage = nullptr;
 }
 
 void SocketIPCServer::Draw() {
@@ -236,6 +255,7 @@ int SocketIPCServer::InitEGLEnv() {
 void SocketIPCServer::RenderSetWindow(JNIEnv *env, jobject new_surface) {
     if (cnt > 0) {
         LOG_I("cnt:%d", cnt);
+        return;
     }
     EGLNativeWindowType window;
     if (new_surface && surface && new_surface != surface &&
@@ -298,20 +318,6 @@ void SocketIPCServer::RenderSetWindow(JNIEnv *env, jobject new_surface) {
         GL_CHECK(__LINE__);
         return;
     }
-}
-
-void SocketIPCServer::DestroyEGLEnv() {
-    if (m_EglDisplay != EGL_NO_DISPLAY) {
-        eglMakeCurrent(m_EglDisplay, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
-        eglDestroyContext(m_EglDisplay, m_EglContext);
-        eglDestroySurface(m_EglDisplay, m_EglSurface);
-        eglReleaseThread();
-        eglTerminate(m_EglDisplay);
-    }
-    m_EglDisplay = EGL_NO_DISPLAY;
-    m_EglSurface = EGL_NO_SURFACE;
-    m_EglContext = EGL_NO_CONTEXT;
-    m_NativeBufferImage = nullptr;
 }
 
 void SocketIPCServer::CreateProgram() {

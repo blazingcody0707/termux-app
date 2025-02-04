@@ -16,9 +16,8 @@ void initClient() {
 
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_termux_display_Display_initDisplayWindow(JNIEnv *env, jclass clazz, jobject surface,
+Java_com_termux_display_Display_initDisplayWindow(JNIEnv *env, jclass clazz,
                                                   jstring name) {
-//    jobject sf = surface ? env->NewGlobalRef(surface) : NULL;
     setNativeWindow(env);
     DisplayServerInit();
 }
@@ -55,7 +54,7 @@ JNIEXPORT void JNICALL
 Java_com_termux_display_Display_sendWindowChange(JNIEnv *env, jclass clazz, jobject surface) {
     jobject sf = surface ? env->NewGlobalRef(surface) : NULL;
     setSurface(sf);
-
+    setNativeWindow(env);
 }
 extern "C"
 JNIEXPORT void JNICALL

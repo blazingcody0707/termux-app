@@ -19,7 +19,7 @@ public class RenderActivity extends AppCompatActivity {
         render.setCallback(new Render.Callback() {
             @Override
             public void onChanged(SurfaceHolder holder, int format, int width, int height) {
-                Display.initDisplayWindow(holder.getSurface(), "screen");
+                Display.initDisplayWindow( "screen");
                 Display.startClient();
             }
         });

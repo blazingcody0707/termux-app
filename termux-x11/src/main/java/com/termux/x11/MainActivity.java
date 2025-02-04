@@ -315,6 +315,11 @@ public class MainActivity extends LoriePreferences implements View.OnApplyWindow
             public void onClientExit() {
                 MainActivity.this.clientConnectedStateChanged(false);
             }
+
+            @Override
+            public void onNewClientCreate() {
+                MainActivity.this.getLorieView().updateWindow();
+            }
         });
     }
 
