@@ -48,7 +48,9 @@ Java_com_termux_display_Display_setServerNativeAssetManager(JNIEnv *env, jobject
 
 void setNativeWindow(JNIEnv *ev) {
     env = ev;
-    env->GetJavaVM(&vm);
+    if (!vm){
+        env->GetJavaVM(&vm);
+    }
 }
 void setSurface(jobject sf){
     surface = sf;

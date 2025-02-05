@@ -1,6 +1,6 @@
 #pragma once
 
-#include "SocketIPCClient.h"
+#include <bits/pthread_types.h>
 #include "InputEventCallback.h"
 #include "types.h"
 

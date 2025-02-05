@@ -1,5 +1,6 @@
 #include "InputServer.h"
 #include "InputEvent.h"
+#include "SocketIPCClient.h"
 
 #include <stdint.h>
 #include <unistd.h>
