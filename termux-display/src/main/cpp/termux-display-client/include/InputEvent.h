@@ -33,8 +33,8 @@ typedef union {
         uint8_t t;
         uint16_t width, height, framerate;
     } screenSize;
-    struct touch_event touch;
-    struct touch_event touch_events[4];
+    touch_event touch;
+    touch_event touch_events[4];
     struct {
         uint8_t t;
         float x, y;
