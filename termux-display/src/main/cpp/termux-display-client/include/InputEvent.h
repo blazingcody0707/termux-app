@@ -22,11 +22,11 @@ typedef enum {
     EVENT_TOUCH_POINTER_UP,
 } eventType;
 #endif
-typedef struct touch_event {
+typedef struct {
     uint8_t num_pointers;
     uint8_t t;
     uint16_t type, id, x, y;
-};
+} touch_event;
 typedef union {
     uint8_t type;
     struct {
